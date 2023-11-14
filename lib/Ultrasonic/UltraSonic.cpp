@@ -91,3 +91,19 @@ void setUpUltraSonic()
     attachInterrupt(echoPin1, echo_interrupt1, CHANGE); // Attach interrupt to the sensor echo input
     attachInterrupt(echoPin2, echo_interrupt2, CHANGE); // Attach interrupt to the sensor echo input
 }
+
+
+ultraSonicVal readUltraSonic()
+{
+    ultraSonicVal result;
+
+    result.right = echo_duration1 / 58;
+    result.rightStatus = result.right <= ultraSonicThresh;
+    result.left = echo_duration2 / 58;
+    result.leftStatus = result.left <= ultraSonicThresh;
+
+    result.overallStatus = result.leftStatus || result.rightStatus;
+
+    return result;
+}
+
