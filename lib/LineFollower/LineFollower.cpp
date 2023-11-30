@@ -16,6 +16,7 @@ struct lineFollwerVal
 
 void setUpLineFollower()
 {
+    // setup all pins for Line Follower
     pinMode(LEFT, INPUT);
     pinMode(RIGHT, INPUT);
     pinMode(MIDDLE, INPUT);
@@ -24,10 +25,12 @@ void setUpLineFollower()
 lineFollwerVal readLineFollower()
 {
     lineFollwerVal result;
+    // Read values of each sensor
     result.left = digitalRead(LEFT);
     result.right = digitalRead(RIGHT);
     result.middle = digitalRead(MIDDLE);
 
+    // Determine if it detects line
     result.overallStatus = (result.left + result.middle + result.right) >= lineFollowerThresh;
 
     return result;

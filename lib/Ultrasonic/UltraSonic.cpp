@@ -82,6 +82,7 @@ void echo_interrupt2()
 
 void setUpUltraSonic()
 {
+    // Setup up pins for ultrasonic
     pinMode(trigPin1, OUTPUT); // Trigger pin set to output
     pinMode(trigPin2, OUTPUT);
     pinMode(echoPin1, INPUT);
@@ -92,11 +93,11 @@ void setUpUltraSonic()
     attachInterrupt(echoPin2, echo_interrupt2, CHANGE); // Attach interrupt to the sensor echo input
 }
 
-
 ultraSonicVal readUltraSonic()
 {
     ultraSonicVal result;
 
+    // read each of the sensor values and determine if they are above threshold (detects object)
     result.right = echo_duration1 / 58;
     result.rightStatus = result.right <= ultraSonicThresh;
     result.left = echo_duration2 / 58;
@@ -106,4 +107,3 @@ ultraSonicVal readUltraSonic()
 
     return result;
 }
-

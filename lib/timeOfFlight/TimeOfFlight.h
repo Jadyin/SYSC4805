@@ -3,7 +3,8 @@ struct timeOfFlightVal
 {
     int left;
     bool leftStatus;
-    // int right;
+    int right;
+    bool rightStatus;
 
     bool overallStatus;
 };

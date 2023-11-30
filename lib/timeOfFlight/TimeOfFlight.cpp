@@ -6,7 +6,8 @@ struct timeOfFlightVal
 {
     int left;
     bool leftStatus;
-    // int right;
+    int right;
+    bool rightStatus;
 
     bool overallStatus;
 };
@@ -63,12 +64,13 @@ timeOfFlightVal readTimeOfFlight()
 {
     timeOfFlightVal result;
 
-    // result.right = sensors[0].timeoutOccurred() ? 0 : sensors[0].read();
-    // result.right = NULL;
-    result.left = sensors[0].timeoutOccurred() ? 0 : sensors[0].read(); // change to 1 the index
+    // read each of the sensor values and determine if they are above threshold (detects object)
+    result.right = sensors[0].timeoutOccurred() ? 0 : sensors[0].read();
+    result.rightStatus = timeOfFlightThresh >= result.right;
+    result.left = sensors[1].timeoutOccurred() ? 0 : sensors[1].read();
     result.leftStatus = timeOfFlightThresh >= result.left;
 
-    result.overallStatus = result.leftStatus;
+    result.overallStatus = result.leftStatus || result.rightStatus;
 
     return result;
 }
