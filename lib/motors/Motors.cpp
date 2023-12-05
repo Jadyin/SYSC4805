@@ -1,7 +1,7 @@
 #include "CytronMotorDriver.h"
 
 const int SPEED_RIGHT = 3;
-const int DIR_RIGHT = 2;
+const int DIR_RIGHT = 6;
 
 const int SPEED_LEFT = 5;
 const int DIR_LEFT = 4;

@@ -17,7 +17,7 @@ void loop()
     // read value for each of the sensors
     ultraSonicVal us = readUltraSonic();
     lineFollwerVal lf = readLineFollower();
-    timeOfFlightVal tof = readTimeOfFlight();
+    // timeOfFlightVal tof = readTimeOfFlight();
 
     // Set the robot to move forward
     moveForwards();
@@ -47,38 +47,38 @@ void loop()
     }
 
     // Check if the TOF detects object
-    if (tof.overallStatus)
-    {
-        stop();                         // stop motor
-        bool turn = us.left > us.right; // check which side detects further object
+    // if (tof.overallStatus)
+    // {
+    //     stop();                         // stop motor
+    //     bool turn = us.left > us.right; // check which side detects further object
 
-        if (tof.leftStatus && !tof.rightStatus) // if left sensor detects object
-        {
-            turnRight();
-        }
-        else if (!tof.leftStatus && tof.rightStatus) // if right sensor detects object
-        {
-            turnLeft();
-        }
-        else // if both sensors detect object
-        {
-            // Turn in the direction with the furthest object
-            if (turn)
-            {
-                turnLeft();
-            }
-            else
-            {
-                turnRight();
-            }
-        }
+    //     if (tof.leftStatus && !tof.rightStatus) // if left sensor detects object
+    //     {
+    //         turnRight();
+    //     }
+    //     else if (!tof.leftStatus && tof.rightStatus) // if right sensor detects object
+    //     {
+    //         turnLeft();
+    //     }
+    //     else // if both sensors detect object
+    //     {
+    //         // Turn in the direction with the furthest object
+    //         if (turn)
+    //         {
+    //             turnLeft();
+    //         }
+    //         else
+    //         {
+    //             turnRight();
+    //         }
+    //     }
 
-        // Keep turning until TOF doesn't detect an object any longer
-        while (tof.overallStatus)
-        {
-            tof = readTimeOfFlight();
-        }
-    }
+    //     // Keep turning until TOF doesn't detect an object any longer
+    //     while (tof.overallStatus)
+    //     {
+    //         tof = readTimeOfFlight();
+    //     }
+    // }
 
     // Check if the ultrasonic detect object
     if (us.overallStatus)
