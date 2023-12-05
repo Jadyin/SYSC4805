@@ -12,95 +12,66 @@ struct ultraSonicVal
     bool overallStatus;
 };
 
-#define trigPin1 9  // Pin 12 trigger output
-#define trigPin2 11 // Pin 12 trigger output
-
-#define echoPin1 10 // Pin 2 Echo input
-#define echoPin2 12 // Pin 2 Echo input
-
-volatile long echo_start1 = 0;    // Records start of echo pulse
-volatile long echo_end1 = 0;      // Records end of echo pulse
-volatile long echo_duration1 = 0; // Duration - difference between end and start
-volatile long echo_start2 = 0;    // Records start of echo pulse
-volatile long echo_end2 = 0;      // Records end of echo pulse
-volatile long echo_duration2 = 0; // Duration - difference between end and start
-
-// ----------------------------------
-// setup() routine called first.
-// A one time routine executed at power up or reset time.
-// Used to initialise hardware.
-// ----------------------------------
-
-void goLow()
-{
-    // sets all the pins to low
-    // Serial.println("pin goes low");
-    digitalWrite(trigPin1, LOW);
-    digitalWrite(trigPin2, LOW);
-    Timer7.detachInterrupt(); // detachs the interupt so that it won't go off again until initialized
-}
-
-void trigger_pulse()
-{
-    // sets all pins to high or triggers the ultrasonic
-    digitalWrite(trigPin1, HIGH);
-    digitalWrite(trigPin2, HIGH);
-    Timer7.attachInterrupt(goLow).start(50); // sets a  timer that will make the pulse go low after 50 us
-}
-
-void echo_interrupt1()
-{
-    switch (digitalRead(echoPin1)) // Test to see if the signal is high or low
-    {
-    case HIGH:                  // High so must be the start of the echo pulse
-        echo_end1 = 0;          // Clear the end time
-        echo_start1 = micros(); // Save the start time
-        break;
-
-    case LOW:                                     // Low so must be the end of the echo pulse
-        echo_end1 = micros();                     // Save the end time
-        echo_duration1 = echo_end1 - echo_start1; // Calculate the pulse duration
-        break;
-    }
-}
-
-void echo_interrupt2()
-{
-    switch (digitalRead(echoPin2)) // Test to see if the signal is high or low
-    {
-    case HIGH:                  // High so must be the start of the echo pulse
-        echo_end2 = 0;          // Clear the end time
-        echo_start2 = micros(); // Save the start time
-        break;
-
-    case LOW:                                     // Low so must be the end of hte echo pulse
-        echo_end2 = micros();                     // Save the end time
-        echo_duration2 = echo_end2 - echo_start2; // Calculate the pulse duration
-        break;
-    }
-}
-
 void setUpUltraSonic()
 {
-    // Setup up pins for ultrasonic
-    pinMode(trigPin1, OUTPUT); // Trigger pin set to output
-    pinMode(trigPin2, OUTPUT);
-    pinMode(echoPin1, INPUT);
-    pinMode(echoPin2, INPUT);                            // Echo pin set to input
-    Timer6.attachInterrupt(trigger_pulse).start(250000); // sends a pulse every 250 ms and lasts 50 us
+    //  Using Timer Unit for both triggering and measuring the Echo
 
-    attachInterrupt(echoPin1, echo_interrupt1, CHANGE); // Attach interrupt to the sensor echo input
-    attachInterrupt(echoPin2, echo_interrupt2, CHANGE); // Attach interrupt to the sensor echo input
+    // -----------Setting Registers for the First Trigger Signal (Pin 2)---------------------
+    PMC->PMC_PCER0 |= PMC_PCER0_PID27;                       // TC0 power ON - Timer Counter 0 channel 0 for first sensor
+    PIOB->PIO_PDR |= PIO_PDR_P25;                            // Pin 2 is no more driven by GPIO
+    PIOB->PIO_ABSR |= PIO_PB25B_TIOA0;                       // Assign B25 to alternative periph_B (TIOA0):
+    TC0->TC_CHANNEL[0].TC_CMR = TC_CMR_TCCLKS_TIMER_CLOCK1   // MCK/2 = 42 MHz
+                                | TC_CMR_WAVE                // Waveform mode
+                                | TC_CMR_WAVSEL_UP_RC        // Count UP mode till RC
+                                | TC_CMR_ACPA_CLEAR          // Clear TIOA0 on RA compare match
+                                | TC_CMR_ACPC_SET;           // Set TIOA0 on RC compare match
+    TC0->TC_CHANNEL[0].TC_RC = 2520000 - 1;                  // Set the frequency to 16.667Hz (Period 60 ms)
+    TC0->TC_CHANNEL[0].TC_RA = 420 - 1;                      // Set the duty cycle (Pulse of 10 usec)
+    TC0->TC_CHANNEL[0].TC_CCR = TC_CCR_SWTRG | TC_CCR_CLKEN; // Software trigger TC0 channel 0 counter and enable
+
+    //-----------Setting Registers for the First Echo Signal (Pin A7)---------------------
+    PMC->PMC_PCER0 |= PMC_PCER0_PID28;                       // Timer Counter 0 channel 1 is TC1, TC1 power ON for first sensor
+    TC0->TC_CHANNEL[1].TC_CMR = TC_CMR_TCCLKS_TIMER_CLOCK1   // Capture mode, MCK/2 = 42 MHz
+                                | TC_CMR_ABETRG              // TIOA is used as the external trigger
+                                | TC_CMR_LDRA_FALLING        // Load RA on falling edge of TIOA
+                                | TC_CMR_ETRGEDG_RISING;     // Trigger on rising edge
+    TC0->TC_CHANNEL[1].TC_CCR = TC_CCR_SWTRG | TC_CCR_CLKEN; // Reset TC counter and enable
+
+    // -----------Setting Registers for the Second Trigger Signal (Pin 12)---------------------
+    PMC->PMC_PCER0 |= PMC_PCER0_PID27;                       // TC0 power ON - Timer Counter 0 channel 2 for second sensor
+    PIOB->PIO_PDR |= PIO_PDR_P21;                            // Pin 12 is no more driven by GPIO
+    PIOB->PIO_ABSR |= PIO_PB25B_TIOA0;                       // Assign B21 to alternative periph_B (TIOA5):
+    TC0->TC_CHANNEL[2].TC_CMR = TC_CMR_TCCLKS_TIMER_CLOCK1   // MCK/2 = 42 MHz
+                                | TC_CMR_WAVE                // Waveform mode
+                                | TC_CMR_WAVSEL_UP_RC        // Count UP mode till RC
+                                | TC_CMR_ACPA_CLEAR          // Clear TIOA5 on RA compare match
+                                | TC_CMR_ACPC_SET;           // Set TIOA5 on RC compare match
+    TC0->TC_CHANNEL[2].TC_RC = 2520000 - 1;                  // Set the frequency to 16.667Hz (Period 60 ms)
+    TC0->TC_CHANNEL[2].TC_RA = 420 - 1;                      // Set the duty cycle (Pulse of 10 usec)
+    TC0->TC_CHANNEL[2].TC_CCR = TC_CCR_SWTRG | TC_CCR_CLKEN; // Software trigger TC0 channel 2 counter and enable
+
+    //-----------Setting Registers for the Second Echo Signal (Pin A6)---------------------
+    PMC->PMC_PCER0 |= PMC_PCER0_PID28;                       // Timer Counter 0 channel 3 is TC1, TC1 power ON for second sensor
+    TC0->TC_CHANNEL[3].TC_CMR = TC_CMR_TCCLKS_TIMER_CLOCK1   // Capture mode, MCK/2 = 42 MHz
+                                | TC_CMR_ABETRG              // TIOA is used as the external trigger
+                                | TC_CMR_LDRA_FALLING        // Load RA on falling edge of TIOA
+                                | TC_CMR_ETRGEDG_RISING;     // Trigger on rising edge
+    TC0->TC_CHANNEL[3].TC_CCR = TC_CCR_SWTRG | TC_CCR_CLKEN; // Reset TC counter and enable
 }
 
 ultraSonicVal readUltraSonic()
 {
     ultraSonicVal result;
 
-    // read each of the sensor values and determine if they are above threshold (detects object)
-    result.right = echo_duration1 / 58;
+    volatile uint32_t CaptureCountA;
+    CaptureCountA = TC0->TC_CHANNEL[1].TC_RA; // get register calue
+
+    volatile uint32_t CaptureCountB;
+    CaptureCountB = TC0->TC_CHANNEL[3].TC_RA; // get register calue
+
+    result.right = 340.0 * CaptureCountB / (42000000.0) / 2 * 100;
     result.rightStatus = result.right <= ultraSonicThresh;
-    result.left = echo_duration2 / 58;
+    result.left = 340.0 * CaptureCountA / (42000000.0) / 2 * 100;
     result.leftStatus = result.left <= ultraSonicThresh;
 
     result.overallStatus = result.leftStatus || result.rightStatus;
